@@ -1,0 +1,21 @@
+#
+# Elvis Parsely
+# Copyright (c) 2024 Jan Möller.
+#
+
+cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
+project(elvis_parsely VERSION 0.0.0)
+
+include(cmake/CPM.cmake)
+
+add_library(elvis_parsely INTERFACE
+        include/parsely/parsely.hpp
+)
+
+option(ELVIS_PARSELY_ENABLE_TESTING OFF)
+set(ELIVS_PARSELY_SANITIZE_TESTS "" CACHE STRING "The sanitizers to enable")
+
+if (ELVIS_PARSELY_ENABLE_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+endif ()
