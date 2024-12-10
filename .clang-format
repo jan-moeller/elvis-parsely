@@ -1,0 +1,70 @@
+---
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignOperands: true
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Allman
+BreakBeforeConceptDeclarations: true
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+BreakStringLiterals: false
+ColumnLimit: 120
+CommentPragmas: '^(/<)'
+Cpp11BracedListStyle: true
+FixNamespaceComments: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # C compatibility headers
+  - Regex: <(assert.h|ctype.h|errno.h|fenv.h|float.h|inttypes.h|limits.h|locale.h|math.h|setjmp.h|signal.h|stdarg.h|stddef.h|stdint.h|stdio.h|stdlib.h|string.h|time.h|uchar.h|wchar.h|wctype.h|stdatomic.h|ccomplex|complex.h|ctgmath|tgmath.h|ciso646|cstdalign|cstdbool|iso646.h|stdalign.h|stdbool.h|stdnoreturn.h|threads.h)>
+    Priority: 4
+  # C++ headers
+  - Regex: <(barrier|condition_variable|future|hazard_pointer|latch|mutex|rcu|semaphore|shared_mutex|stop_token|thread|atomic|regex|filesystem|cstdio|fstream|iomanip|ios|iosfwd|iostream|istream|ostream|print|spanstream|sstream|streambuf|strstream|syncstream|clocale|codecvt|locale|text_encoding|bit|cfenv|cmath|complex|linalg|numbers|numeric|random|ratio|valarray|algorithm|execution|generator|ranges|iterator|array|deque|flat_map|flat_set|forward_list|inplace_vector|list|map|mdspan|queue|set|span|stack|unordered_map|unordered_set|vector|cctype|charconv|cstring|cuchar|cwchar|cwctype|format|string|string_view|cassert|cerrno|exception|stacktrace|stdexcept|system_error|cfloat|cinttypes|climits|cstdint|limits|stdfloat|memory|memory_resource|new|scoped_allocator|any|bitset|chrono|compare|csetjmp|csignal|cstdarg|cstddef|cstdlib|ctime|debugging|expected|functional|initializer_list|optional|source_location|tuple|type_traits|typeindex|typeinfo|utility|variant|version|coroutine|concepts)>
+    Priority: 3
+  # Any project header
+  - Regex: '<parsely/.*>'
+    Priority: 1
+  # Any other header imported with angular brackets
+  - Regex: '<.*>'
+    Priority: 2
+  # Any header not in the other categories
+  - Regex: '.*'
+    Priority: 0
+IndentCaseLabels: false
+IndentRequiresClause: true
+IndentWidth: 4
+Language: Cpp
+PenaltyBreakAssignment: 1000
+PenaltyBreakBeforeFirstCallParameter: 500
+PointerAlignment: Left
+QualifierAlignment: Right
+RequiresClausePosition: OwnLine
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: true
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: c++20
+...
