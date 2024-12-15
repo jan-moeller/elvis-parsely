@@ -70,6 +70,52 @@ consteval auto trim()
         return structural::inplace_string<size>{begin, end};
     }
 }
+
+// Splits an inplace_string at a delimiter, returning the result as a tuple of inplace_strings
+// If `S` does not contain `Delimiter`, `tuple(S)` is returned.
+template<structural::inplace_string S, char Delimiter>
+consteval auto split()
+{
+    static constexpr auto parts_vec = []
+    {
+        structural::inplace_vector<structural::inplace_string<S.size()>, S.size() + 1> ps;
+
+        char const* begin = S.begin();
+        for (auto const* it = begin; it != S.end(); ++it)
+        {
+            if (*it == Delimiter)
+            {
+                ps.emplace_back(begin, it);
+                begin = it + 1;
+            }
+        }
+        ps.emplace_back(begin, S.end());
+        return ps;
+    }();
+
+    return []<std::size_t... is>(std::index_sequence<is...>) constexpr
+    {
+        return std::tuple{structural::inplace_string<parts_vec[is].size()>{parts_vec[is]}...};
+    }(std::make_index_sequence<parts_vec.size()>{});
+}
+
+// Splits an inplace_string at the first occurrence of a delimiter
+// If `S` does not contain `Delimiter`, `tuple(S)` is returned.
+// Otherwise, `pair(head, tail)` is returned, where `head` is the part before `Delimiter`, and `tail` the part after.
+template<structural::inplace_string S, char Delimiter>
+consteval auto split_once()
+{
+    static constexpr char const* split_point = std::ranges::find(S, Delimiter);
+    if constexpr (split_point == S.end())
+        return std::tuple(S);
+    else
+    {
+        static constexpr auto first_size  = split_point - S.begin();
+        static constexpr auto second_size = S.size() - first_size - 1;
+        return std::pair(structural::inplace_string<first_size>(S.begin(), split_point),
+                         structural::inplace_string<second_size>(split_point + 1, S.end()));
+    }
+}
 } // namespace parsely
 
 #endif // STRING_HPP
