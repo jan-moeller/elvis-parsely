@@ -8,9 +8,13 @@ project(elvis_parsely VERSION 0.0.0)
 
 include(cmake/CPM.cmake)
 
+CPMAddPackage("gh:jan-moeller/structural@0.3.0")
+
 add_library(elvis_parsely INTERFACE
         include/parsely/parsely.hpp
 )
+target_include_directories(elvis_parsely INTERFACE include)
+target_link_libraries(elvis_parsely INTERFACE structural)
 
 option(ELVIS_PARSELY_ENABLE_TESTING OFF)
 set(ELIVS_PARSELY_SANITIZE_TESTS "" CACHE STRING "The sanitizers to enable")
