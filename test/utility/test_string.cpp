@@ -34,3 +34,10 @@ TEST_CASE("split_once")
     STATIC_CHECK(split_once<"::", ':'>() == std::tuple("", ":"));
     STATIC_CHECK(split_once<"foo:bar:baz", ':'>() == std::tuple("foo", "bar:baz"));
 }
+
+TEST_CASE("split_production")
+{
+    STATIC_CHECK(split_production<"a:b">() == std::pair("a", "b"));
+    STATIC_CHECK(split_production<" a : b ">() == std::pair("a", "b"));
+    STATIC_CHECK(split_production<R"( a : b | ":")">() == std::pair("a", R"(b | ":")"));
+}

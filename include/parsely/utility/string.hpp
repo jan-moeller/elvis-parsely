@@ -116,6 +116,23 @@ consteval auto split_once()
                          structural::inplace_string<second_size>(split_point + 1, S.end()));
     }
 }
+
+// Splits a production rule of the form "<symbol> : <expression>", where <symbol> is alphanumeric, and the expression
+// is not validated. Both symbol and expression have blanks trimmed.
+template<structural::inplace_string Production>
+consteval auto split_production()
+{
+    static constexpr auto s = split_once<Production, ':'>();
+    static_assert(std::tuple_size_v<decltype(s)> == 2, "Production must have pattern <symbol> : <expression>");
+
+    static constexpr auto symbol     = trim<s.first, is_blank>();
+    static constexpr auto expression = trim<s.second, is_blank>();
+    static_assert(std::ranges::all_of(symbol, is_alnum), "Symbol must only contain alphanumeric characters");
+    static_assert(!symbol.empty(), "Symbol names can't be empty");
+    static_assert(!expression.empty(), "Expressions can't be empty");
+
+    return std::pair{symbol, expression};
+}
 } // namespace parsely
 
 #endif // STRING_HPP
