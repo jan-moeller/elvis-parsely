@@ -133,6 +133,207 @@ consteval auto split_production()
 
     return std::pair{symbol, expression};
 }
+
+// An alternatives expression AST node
+template<typename... Alternatives>
+struct alt_expr
+{
+    std::tuple<Alternatives...> alternatives;
+
+    constexpr auto operator==(alt_expr const&) const -> bool = default;
+};
+
+// A sequence expression AST node
+template<typename... Elements>
+struct seq_expr
+{
+    std::tuple<Elements...> sequence;
+
+    constexpr auto operator==(seq_expr const&) const -> bool = default;
+};
+
+// A terminal expression AST node
+template<std::size_t N>
+struct terminal_expr
+{
+    structural::inplace_string<N> terminal;
+
+    constexpr auto operator==(terminal_expr const&) const -> bool = default;
+};
+
+// A nonterminal expression AST node
+template<std::size_t N>
+struct nonterminal_expr
+{
+    structural::inplace_string<N> symbol;
+
+    constexpr auto operator==(nonterminal_expr const&) const -> bool = default;
+};
+
+// Helper function to combine two `alt_expr` parsing results
+template<typename... Exprs1, typename... Exprs2>
+consteval auto combine(alt_expr<Exprs1...> a, alt_expr<Exprs2...> b) -> alt_expr<Exprs1..., Exprs2...>
+{
+    return alt_expr<Exprs1..., Exprs2...>{std::tuple_cat(a.alternatives, b.alternatives)};
+}
+
+// Helper function to combine two `seq_expr` parsing results
+template<typename... Exprs1, typename... Exprs2>
+consteval auto combine(seq_expr<Exprs1...> a, seq_expr<Exprs2...> b) -> seq_expr<Exprs1..., Exprs2...>
+{
+    return seq_expr<Exprs1..., Exprs2...>{std::tuple_cat(a.sequence, b.sequence)};
+}
+
+// Checks if a parse result is a failure (an empty tuple is used to signal failure)
+template<typename T>
+consteval auto is_failed_parse(T const& t) -> bool
+{
+    return std::tuple_size_v<std::remove_cvref_t<decltype(t)>> == 0;
+}
+
+// Parses a terminal expression
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(terminal_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
+template<structural::inplace_string Expression>
+consteval auto parse_terminal_expr() // -> pair(terminal_expr<...>, inplace_string)
+{
+    if constexpr (!Expression.starts_with("\""))
+        return std::tuple();
+    else
+    {
+        static constexpr char const* split_point = std::ranges::find(Expression.begin() + 1, Expression.end(), '\"');
+        if constexpr (split_point == Expression.end())
+            return std::tuple();
+        else
+        {
+            static constexpr std::size_t consumed_size  = split_point - Expression.begin() + 1;
+            static constexpr std::size_t remaining_size = Expression.size() - consumed_size;
+
+            static constexpr auto result = terminal_expr<consumed_size - 2>{
+                structural::inplace_string<consumed_size - 2>(Expression.begin() + 1, split_point)};
+
+            return std::pair(result, structural::inplace_string<remaining_size>(split_point + 1, Expression.end()));
+        }
+    }
+}
+
+// Parses a nonterminal expression
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(nonterminal_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
+template<structural::inplace_string Expression>
+consteval auto parse_nonterminal_expr() // -> pair(nonterminal_expr<...>, inplace_string)
+{
+    static constexpr char const* split_point = std::ranges::find_if_not(Expression, is_alnum);
+    if constexpr (split_point == Expression.begin())
+        return std::tuple();
+    else
+    {
+        static constexpr std::size_t consumed_size  = split_point - Expression.begin();
+        static constexpr std::size_t remaining_size = Expression.size() - consumed_size;
+
+        static constexpr auto result = nonterminal_expr<consumed_size>{
+            structural::inplace_string<consumed_size>(Expression.begin(), split_point)};
+
+        return std::pair(result, structural::inplace_string<remaining_size>(split_point, Expression.end()));
+    }
+}
+
+// Parses a primary expression
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair((non)terminal_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
+template<structural::inplace_string Expression>
+consteval auto parse_prim_expr() // -> pair(terminal_expr<...> | nonterminal_expr<...>, inplace_string)
+{
+    static constexpr auto terminal = parse_terminal_expr<Expression>();
+    if constexpr (is_failed_parse(terminal))
+    {
+        static constexpr auto nonterminal = parse_nonterminal_expr<Expression>();
+        if constexpr (is_failed_parse(nonterminal))
+            return std::tuple();
+        else
+            return nonterminal;
+    }
+    else
+    {
+        return terminal;
+    }
+}
+
+// Parses a sequence expression
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(seq_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
+template<structural::inplace_string Expression>
+consteval auto parse_seq_expr() // -> pair(seq_expr<...>, inplace_string)
+{
+    static constexpr auto prim = parse_prim_expr<Expression>();
+    if constexpr (is_failed_parse(prim))
+        return std::tuple();
+    else
+    {
+        static constexpr auto next           = trim<prim.second>();
+        static constexpr auto initial_result = seq_expr<decltype(prim.first)>{std::tuple(prim.first)};
+        if constexpr (next == prim.second) // no whitespace follows primary expression
+            return std::pair(initial_result, prim.second);
+        else
+        {
+            static constexpr auto result = parse_seq_expr<next>();
+            if constexpr (is_failed_parse(result))
+                return std::pair(initial_result, prim.second);
+            else
+            {
+                static constexpr auto combined_result = combine(initial_result, result.first);
+                return std::pair(combined_result, result.second);
+            }
+        }
+    }
+}
+
+// Parses an alternatives expression
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(alt_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
+template<structural::inplace_string Expression>
+consteval auto parse_alt_expr() // -> pair(alt_expr<...>, inplace_string)
+{
+    static constexpr auto seq = parse_seq_expr<Expression>();
+    if constexpr (is_failed_parse(seq))
+        return std::tuple();
+    else
+    {
+        static constexpr auto alt            = trim<seq.second>();
+        static constexpr auto initial_result = alt_expr<decltype(seq.first)>{std::tuple(seq.first)};
+        if constexpr (!alt.starts_with("|"))
+            return std::pair(initial_result, seq.second);
+        else
+        {
+            static constexpr auto next   = trim<structural::inplace_string<alt.size() - 1>{alt.begin() + 1}>();
+            static constexpr auto result = parse_alt_expr<next>();
+            if constexpr (is_failed_parse(result))
+                return std::pair(initial_result, seq.second);
+            else
+            {
+                static constexpr auto combined_result = combine(initial_result, result.first);
+                return std::pair(combined_result, result.second);
+            }
+        }
+    }
+}
+
+// Parses an expression
+// Returns the AST on success
+// Fails to compile on parsing failure
+template<structural::inplace_string Expression>
+consteval auto parse_expression() // -> alt_expr<...>
+{
+    static constexpr auto alternatives = parse_alt_expr<Expression>();
+    static_assert(!is_failed_parse(alternatives), "Invalid expression");
+    static_assert(alternatives.second.empty(), "Trailing unparsed input in expression");
+    return alternatives.first;
+}
 } // namespace parsely
 
 #endif // STRING_HPP
