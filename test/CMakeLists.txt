@@ -10,6 +10,7 @@ include(Catch)
 
 add_executable(elvis_parsely_tests
         test.cpp
+        utility/test_string.cpp
 )
 
 target_link_libraries(elvis_parsely_tests Catch2::Catch2WithMain elvis_parsely)

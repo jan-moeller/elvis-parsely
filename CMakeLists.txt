@@ -12,6 +12,7 @@ CPMAddPackage("gh:jan-moeller/structural@0.3.0")
 
 add_library(elvis_parsely INTERFACE
         include/parsely/parsely.hpp
+        include/parsely/utility/string.hpp
 )
 target_include_directories(elvis_parsely INTERFACE include)
 target_link_libraries(elvis_parsely INTERFACE structural)
