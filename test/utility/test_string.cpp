@@ -161,3 +161,25 @@ TEST_CASE("parse_production")
                      },
                      " trailing"));
 }
+
+TEST_CASE("parse_grammar")
+{
+    STATIC_CHECK(parse_grammar<"">() == std::tuple());
+    STATIC_CHECK(parse_grammar<"asd: foo;">()
+                 == std::tuple(
+                     grammar<production<3, nonterminal_expr<3>>>{
+                         std::tuple{
+                             production<3, nonterminal_expr<3>>{"asd", "foo"},
+                         },
+                     },
+                     ""));
+    STATIC_CHECK(parse_grammar<"asd: foo; bar : \"baz\" ;">()
+                 == std::tuple(
+                     grammar<production<3, nonterminal_expr<3>>, production<3, terminal_expr<3>>>{
+                         std::tuple{
+                             production<3, nonterminal_expr<3>>{"asd", "foo"},
+                             production<3, terminal_expr<3>>{"bar", "baz"},
+                         },
+                     },
+                     ""));
+}

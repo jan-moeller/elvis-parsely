@@ -134,6 +134,15 @@ consteval auto split_production()
     return std::pair{symbol, expression};
 }
 
+// The grammar root AST node
+template<typename... Productions>
+struct grammar
+{
+    std::tuple<Productions...> productions;
+
+    constexpr auto operator==(grammar const&) const -> bool = default;
+};
+
 // A production AST node
 template<std::size_t N, typename Expression>
 struct production
@@ -241,6 +250,13 @@ template<typename... Exprs1, typename... Exprs2>
 consteval auto combine(seq_expr<Exprs1...> a, seq_expr<Exprs2...> b) -> seq_expr<Exprs1..., Exprs2...>
 {
     return seq_expr<Exprs1..., Exprs2...>{std::tuple_cat(a.sequence, b.sequence)};
+}
+
+// Helper function to combine two `grammar` parsing results
+template<typename... Prods1, typename... Prods2>
+consteval auto combine(grammar<Prods1...> a, grammar<Prods2...> b) -> grammar<Prods1..., Prods2...>
+{
+    return grammar<Prods1..., Prods2...>{std::tuple_cat(a.productions, b.productions)};
 }
 
 // Checks if a parse result is a failure (an empty tuple is used to signal failure)
@@ -436,6 +452,31 @@ consteval auto parse_production() // -> pair(production<...>, inplace_string)
                     };
                 }
             }
+        }
+    }
+}
+
+// Parses a grammar
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(grammar, remaining)`, where `remaining` is the part of `Grammar` not consumed, otherwise
+template<structural::inplace_string Grammar>
+consteval auto parse_grammar() // -> pair(grammar<...>, inplace_string)
+{
+    static constexpr auto prod = parse_production<Grammar>();
+    if constexpr (is_failed_parse(prod))
+        return std::tuple();
+    else
+    {
+        static constexpr auto remaining      = trim<prod.second>();
+        static constexpr auto result         = parse_grammar<remaining>();
+        static constexpr auto initial_result = grammar<decltype(prod.first)>{std::tuple(prod.first)};
+        if constexpr (is_failed_parse(result))
+            return std::pair(initial_result, prod.second);
+        else
+        {
+            static constexpr auto combined_result = combine(initial_result, result.first);
+            return std::pair(combined_result, result.second);
         }
     }
 }
