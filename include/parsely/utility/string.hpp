@@ -170,6 +170,55 @@ struct nonterminal_expr
     constexpr auto operator==(nonterminal_expr const&) const -> bool = default;
 };
 
+// Helper function to elevate an expression to alt_expr
+template<typename... Exprs>
+consteval auto ensure_alt_expr(alt_expr<Exprs...> expr)
+{
+    return expr;
+}
+
+// Helper function to elevate an expression to alt_expr
+template<typename... Exprs>
+consteval auto ensure_alt_expr(seq_expr<Exprs...> expr)
+{
+    return alt_expr<seq_expr<Exprs...>>{std::tuple(expr)};
+}
+
+// Helper function to elevate an expression to alt_expr
+template<std::size_t N>
+consteval auto ensure_alt_expr(terminal_expr<N> expr)
+{
+    return alt_expr<terminal_expr<N>>{std::tuple(expr)};
+}
+
+// Helper function to elevate an expression to alt_expr
+template<std::size_t N>
+consteval auto ensure_alt_expr(nonterminal_expr<N> expr)
+{
+    return alt_expr<nonterminal_expr<N>>{std::tuple(expr)};
+}
+
+// Helper function to elevate an expression to seq_expr
+template<typename... Exprs>
+consteval auto ensure_seq_expr(seq_expr<Exprs...> expr)
+{
+    return expr;
+}
+
+// Helper function to elevate an expression to seq_expr
+template<std::size_t N>
+consteval auto ensure_seq_expr(terminal_expr<N> expr)
+{
+    return seq_expr<terminal_expr<N>>{std::tuple(expr)};
+}
+
+// Helper function to elevate an expression to seq_expr
+template<std::size_t N>
+consteval auto ensure_seq_expr(nonterminal_expr<N> expr)
+{
+    return seq_expr<nonterminal_expr<N>>{std::tuple(expr)};
+}
+
 // Helper function to combine two `alt_expr` parsing results
 template<typename... Exprs1, typename... Exprs2>
 consteval auto combine(alt_expr<Exprs1...> a, alt_expr<Exprs2...> b) -> alt_expr<Exprs1..., Exprs2...>
@@ -274,18 +323,18 @@ consteval auto parse_seq_expr() // -> pair(seq_expr<...>, inplace_string)
         return std::tuple();
     else
     {
-        static constexpr auto next           = trim<prim.second>();
-        static constexpr auto initial_result = seq_expr<decltype(prim.first)>{std::tuple(prim.first)};
+        static constexpr auto next = trim<prim.second>();
         if constexpr (next == prim.second) // no whitespace follows primary expression
-            return std::pair(initial_result, prim.second);
+            return prim;
         else
         {
             static constexpr auto result = parse_seq_expr<next>();
             if constexpr (is_failed_parse(result))
-                return std::pair(initial_result, prim.second);
+                return prim;
             else
             {
-                static constexpr auto combined_result = combine(initial_result, result.first);
+                static constexpr auto initial_result  = seq_expr<decltype(prim.first)>{std::tuple(prim.first)};
+                static constexpr auto combined_result = combine(initial_result, ensure_seq_expr(result.first));
                 return std::pair(combined_result, result.second);
             }
         }
@@ -304,19 +353,19 @@ consteval auto parse_alt_expr() // -> pair(alt_expr<...>, inplace_string)
         return std::tuple();
     else
     {
-        static constexpr auto alt            = trim<seq.second>();
-        static constexpr auto initial_result = alt_expr<decltype(seq.first)>{std::tuple(seq.first)};
+        static constexpr auto alt = trim<seq.second>();
         if constexpr (!alt.starts_with("|"))
-            return std::pair(initial_result, seq.second);
+            return seq;
         else
         {
             static constexpr auto next   = trim<structural::inplace_string<alt.size() - 1>{alt.begin() + 1}>();
             static constexpr auto result = parse_alt_expr<next>();
             if constexpr (is_failed_parse(result))
-                return std::pair(initial_result, seq.second);
+                return seq;
             else
             {
-                static constexpr auto combined_result = combine(initial_result, result.first);
+                static constexpr auto initial_result  = alt_expr<decltype(seq.first)>{std::tuple(seq.first)};
+                static constexpr auto combined_result = combine(initial_result, ensure_alt_expr(result.first));
                 return std::pair(combined_result, result.second);
             }
         }

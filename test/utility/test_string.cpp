@@ -72,40 +72,39 @@ TEST_CASE("parse_prim_expr")
 TEST_CASE("parse_seq_expr")
 {
     STATIC_CHECK(parse_seq_expr<"">() == std::tuple());
-    STATIC_CHECK(parse_seq_expr<"asd">() == std::tuple(seq_expr{std::tuple(nonterminal_expr<3>{"asd"})}, ""));
-    STATIC_CHECK(parse_seq_expr<"\"asd\"">() == std::tuple(seq_expr{std::tuple(terminal_expr<3>{"asd"})}, ""));
+    STATIC_CHECK(parse_seq_expr<"asd">() == std::tuple(nonterminal_expr<3>{"asd"}, ""));
+    STATIC_CHECK(parse_seq_expr<"\"asd\"">() == std::tuple(terminal_expr<3>{"asd"}, ""));
     STATIC_CHECK(parse_seq_expr<"\"asd\" foo bar">()
-                 == std::tuple(seq_expr{std::tuple(terminal_expr<3>{"asd"},
-                                                   nonterminal_expr<3>{"foo"},
-                                                   nonterminal_expr<3>{"bar"})},
-                               ""));
+                 == std::tuple(
+                     seq_expr{
+                         std::tuple{
+                             terminal_expr<3>{"asd"},
+                             nonterminal_expr<3>{"foo"},
+                             nonterminal_expr<3>{"bar"},
+                         },
+                     },
+                     ""));
     STATIC_CHECK(parse_seq_expr<"\"asd\" foo | bar">()
-                 == std::tuple(seq_expr{std::tuple(terminal_expr<3>{"asd"}, nonterminal_expr<3>{"foo"})}, " | bar"));
+                 == std::tuple(
+                     seq_expr{
+                         std::tuple{
+                             terminal_expr<3>{"asd"},
+                             nonterminal_expr<3>{"foo"},
+                         },
+                     },
+                     " | bar"));
 }
 
 TEST_CASE("parse_alt_expr")
 {
     STATIC_CHECK(parse_alt_expr<"">() == std::tuple());
-    STATIC_CHECK(parse_alt_expr<"asd">()
-                 == std::tuple(
-                     alt_expr{
-                         std::tuple{
-                             seq_expr{
-                                 std::tuple{nonterminal_expr<3>{"asd"}},
-                             },
-                         },
-                     },
-                     ""));
+    STATIC_CHECK(parse_alt_expr<"asd">() == std::tuple(nonterminal_expr<3>{"asd"}, ""));
     STATIC_CHECK(parse_alt_expr<"asd|qwe">()
                  == std::tuple(
                      alt_expr{
                          std::tuple{
-                             seq_expr{
-                                 std::tuple{nonterminal_expr<3>{"asd"}},
-                             },
-                             seq_expr{
-                                 std::tuple{nonterminal_expr<3>{"qwe"}},
-                             },
+                             nonterminal_expr<3>{"asd"},
+                             nonterminal_expr<3>{"qwe"},
                          },
                      },
                      ""));
@@ -113,20 +112,14 @@ TEST_CASE("parse_alt_expr")
                  == std::tuple(
                      alt_expr{
                          std::tuple{
-                             seq_expr{
-                                 std::tuple{nonterminal_expr<3>{"asd"}},
-                             },
+                             nonterminal_expr<3>{"asd"},
                              seq_expr{
                                  std::tuple{
                                      nonterminal_expr<3>{"qwe"},
                                      nonterminal_expr<3>{"rty"},
                                  },
                              },
-                             seq_expr{
-                                 std::tuple{
-                                     nonterminal_expr<3>{"foo"},
-                                 },
-                             },
+                             nonterminal_expr<3>{"foo"},
                          },
                      },
                      ""));
