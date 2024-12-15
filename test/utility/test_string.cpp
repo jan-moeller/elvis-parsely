@@ -127,5 +127,37 @@ TEST_CASE("parse_alt_expr")
 
 TEST_CASE("parse_expression")
 {
-    STATIC_CHECK(parse_expression<"foo">() == parse_alt_expr<"foo">().first);
+    STATIC_CHECK(parse_expression<"foo">() == parse_alt_expr<"foo">());
+}
+
+TEST_CASE("parse_production")
+{
+    STATIC_CHECK(parse_production<"">() == std::tuple());
+    STATIC_CHECK(parse_production<"asd">() == std::tuple());
+    STATIC_CHECK(parse_production<"asd:">() == std::tuple());
+    STATIC_CHECK(parse_production<"asd: foo">() == std::tuple());
+    STATIC_CHECK(parse_production<"asd: foo;">()
+                 == std::tuple(
+                     production<3, nonterminal_expr<3>>{
+                         "asd",
+                         nonterminal_expr<3>{"foo"},
+                     },
+                     ""));
+    STATIC_CHECK(parse_production<"asd: foo \"bar\" | baz; trailing">()
+                 == std::tuple(
+                     production<3, alt_expr<seq_expr<nonterminal_expr<3>, terminal_expr<3>>, nonterminal_expr<3>>>{
+                         "asd",
+                         alt_expr{
+                             std::tuple{
+                                 seq_expr{
+                                     std::tuple{
+                                         nonterminal_expr<3>{"foo"},
+                                         terminal_expr<3>{"bar"},
+                                     },
+                                 },
+                                 nonterminal_expr<3>{"baz"},
+                             },
+                         },
+                     },
+                     " trailing"));
 }

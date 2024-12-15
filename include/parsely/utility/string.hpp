@@ -134,6 +134,16 @@ consteval auto split_production()
     return std::pair{symbol, expression};
 }
 
+// A production AST node
+template<std::size_t N, typename Expression>
+struct production
+{
+    structural::inplace_string<N> symbol;
+    Expression                    expression;
+
+    constexpr auto operator==(production const&) const -> bool = default;
+};
+
 // An alternatives expression AST node
 template<typename... Alternatives>
 struct alt_expr
@@ -373,15 +383,61 @@ consteval auto parse_alt_expr() // -> pair(alt_expr<...>, inplace_string)
 }
 
 // Parses an expression
-// Returns the AST on success
-// Fails to compile on parsing failure
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(alt_expr, remaining)`, where `remaining` is the part of `Expression` not consumed, otherwise
 template<structural::inplace_string Expression>
-consteval auto parse_expression() // -> alt_expr<...>
+consteval auto parse_expression() // -> pair(alt_expr<...>, inplace_string)
 {
     static constexpr auto alternatives = parse_alt_expr<Expression>();
-    static_assert(!is_failed_parse(alternatives), "Invalid expression");
-    static_assert(alternatives.second.empty(), "Trailing unparsed input in expression");
-    return alternatives.first;
+    if constexpr (is_failed_parse(alternatives))
+        return std::tuple();
+    else
+        return alternatives;
+}
+
+// Parses a production
+// Returns:
+//  `tuple()` in case of parsing failure
+//  `pair(production, remaining)`, where `remaining` is the part of `Production` not consumed, otherwise
+template<structural::inplace_string Production>
+consteval auto parse_production() // -> pair(production<...>, inplace_string)
+{
+    static constexpr auto symbol = parse_nonterminal_expr<Production>();
+    if constexpr (is_failed_parse(symbol))
+        return std::tuple();
+    else
+    {
+        static constexpr auto colon_expr = trim<symbol.second>();
+        if constexpr (!colon_expr.starts_with(":"))
+            return std::tuple();
+        else
+        {
+            static constexpr auto expr = trim<structural::inplace_string<colon_expr.size() - 1>(colon_expr.begin() + 1,
+                                                                                                colon_expr.end())>();
+            static constexpr auto expression = parse_expression<expr>();
+            if constexpr (is_failed_parse(expression))
+                return std::tuple();
+            else
+            {
+                static constexpr auto last = trim<expression.second>();
+                if constexpr (!last.starts_with(";"))
+                    return std::tuple();
+                else
+                {
+                    static constexpr auto remaining = structural::inplace_string<last.size() - 1>(last.begin() + 1,
+                                                                                                  last.end());
+                    return std::pair{
+                        production<symbol.first.symbol.size(), decltype(expression.first)>{
+                            symbol.first.symbol,
+                            expression.first,
+                        },
+                        remaining,
+                    };
+                }
+            }
+        }
+    }
 }
 } // namespace parsely
 
