@@ -1,0 +1,39 @@
+name: gcc
+
+on:
+  push:
+    branches: [ main, fix/*, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        compiler:
+          - g++-14
+        build_type: [ Debug, Release ]
+        include:
+          - runner: ubuntu-24.04
+            compiler: g++-14
+            sanitizers: address,undefined
+
+    runs-on: ${{matrix.runner}}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B ${{github.workspace}}/build
+          -D CMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -D ELIVS_PARSELY_SANITIZE_TESTS=${{matrix.sanitizers}}
+          -D ELVIS_PARSELY_ENABLE_TESTING=ON
+          -D CMAKE_CXX_COMPILER=${{matrix.compiler}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{matrix.build_type}} --test-dir ${{github.workspace}}/build --output-on-failure
+      
