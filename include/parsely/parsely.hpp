@@ -6,4 +6,6 @@
 #ifndef PARSELY_HPP
 #define PARSELY_HPP
 
-#endif //PARSELY_HPP
+#include <parsely/utility/parser.hpp>
+
+#endif // PARSELY_HPP
