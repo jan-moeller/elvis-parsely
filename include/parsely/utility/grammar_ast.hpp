@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <tuple>
 
-namespace parsely
+namespace parsely::detail
 {
 // grammar     : production+
 // production  : nonterminal _ ":" _ expression _ ";"

@@ -18,7 +18,7 @@ template<typename, auto>
 struct parse_tree_node;
 
 // Parse tree node used for sequence expressions
-template<typename Parser, seq_expr Expr>
+template<typename Parser, detail::seq_expr Expr>
 struct parse_tree_node<Parser, Expr>
 {
     using nested_type = decltype([]<std::size_t... is>(std::index_sequence<is...>) constexpr mutable
@@ -48,7 +48,7 @@ struct parse_tree_node<Parser, Expr>
 };
 
 // Parse tree node used for alternative expressions
-template<typename Parser, alt_expr Expr>
+template<typename Parser, detail::alt_expr Expr>
 struct parse_tree_node<Parser, Expr>
 {
     using nested_type = decltype([]<std::size_t... is>(std::index_sequence<is...>) constexpr mutable
@@ -92,7 +92,7 @@ struct parse_tree_node<Parser, Expr>
 };
 
 // Parse tree node used for terminal expressions
-template<typename Parser, terminal_expr Expr>
+template<typename Parser, detail::terminal_expr Expr>
 struct parse_tree_node<Parser, Expr>
 {
     static constexpr std::string_view terminal = Expr.terminal;
@@ -106,7 +106,7 @@ struct parse_tree_node<Parser, Expr>
 };
 
 // Parse tree node used for non-terminal expressions
-template<typename Parser, nonterminal_expr Expr>
+template<typename Parser, detail::nonterminal_expr Expr>
 struct parse_tree_node<Parser, Expr>
 {
     using nested_type = decltype([]() constexpr
@@ -148,7 +148,7 @@ namespace detail
 template<typename Parser, auto Expr>
 struct parser_creator;
 
-template<typename Parser, nonterminal_expr Expr>
+template<typename Parser, detail::nonterminal_expr Expr>
 struct parser_creator<Parser, Expr>
 {
     static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
@@ -159,7 +159,7 @@ struct parser_creator<Parser, Expr>
         };
     }
 };
-template<typename Parser, terminal_expr Expr>
+template<typename Parser, detail::terminal_expr Expr>
 struct parser_creator<Parser, Expr>
 {
     static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
@@ -177,7 +177,7 @@ struct parser_creator<Parser, Expr>
         };
     }
 };
-template<typename Parser, seq_expr Expr>
+template<typename Parser, detail::seq_expr Expr>
 struct parser_creator<Parser, Expr>
 {
     static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
@@ -212,7 +212,7 @@ struct parser_creator<Parser, Expr>
         };
     }
 };
-template<typename Parser, alt_expr Expr>
+template<typename Parser, detail::alt_expr Expr>
 struct parser_creator<Parser, Expr>
 {
     static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
@@ -257,8 +257,8 @@ struct parser
   private:
     static constexpr auto s_grammar = []
     {
-        static constexpr auto g = parse_grammar<Grammar>();
-        static_assert(!is_failed_parse(g), "Invalid grammar!");
+        static constexpr auto g = detail::parse_grammar<Grammar>();
+        static_assert(!detail::is_failed_parse(g), "Invalid grammar!");
         static_assert(g.second.empty(), "Excess input at the end of grammar!");
         return g.first;
     }();
@@ -273,7 +273,8 @@ struct parser
     // The Symbol NTTP indicates which production to use for parsing. By default, the production first mentioned in the
     // grammar is used.
     template<structural::inplace_string Symbol = get<0>(s_grammar.productions).symbol>
-    static constexpr auto parse(std::string_view const input) -> parse_tree_node<parser, nonterminal_expr{Symbol}>
+    static constexpr auto parse(std::string_view const input)
+        -> parse_tree_node<parser, detail::nonterminal_expr{Symbol}>
     {
         static constexpr std::size_t index = []<std::size_t... is>(std::index_sequence<is...>) constexpr
         {
@@ -288,9 +289,11 @@ struct parser
         static constexpr auto nt_parser = detail::parser_creator<parser, expression>()();
 
         auto result = nt_parser(input);
-        return parse_tree_node<parser, nonterminal_expr{Symbol}>{.valid       = result.valid,
-                                                                 .source_text = result.source_text,
-                                                                 .nested      = indirect(std::move(result))};
+        return parse_tree_node<parser, detail::nonterminal_expr{Symbol}>{
+            .valid       = result.valid,
+            .source_text = result.source_text,
+            .nested      = indirect(std::move(result)),
+        };
     }
 
     // Parses the given input string

@@ -7,7 +7,7 @@
 
 #include <catch2/catch_all.hpp>
 
-using namespace parsely;
+using namespace parsely::detail;
 
 TEST_CASE("parse_nonterminal_expr")
 {
