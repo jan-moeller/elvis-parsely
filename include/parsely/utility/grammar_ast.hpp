@@ -24,7 +24,7 @@ namespace parsely
 // prim_expr   : paren_expr | terminal | nonterminal
 // paren_expr  : "(" _ expression _ ")"
 // terminal    : "\"" .* "\""
-// nonterminal : alnum+
+// nonterminal : (alnum | "_")+
 // __          : space+
 // _           : __?
 
@@ -194,7 +194,7 @@ consteval auto parse_terminal_expr() // -> pair(terminal_expr<...>, inplace_stri
 template<structural::inplace_string Expression>
 consteval auto parse_nonterminal_expr() // -> pair(nonterminal_expr<...>, inplace_string)
 {
-    static constexpr char const* split_point = std::ranges::find_if_not(Expression, is_alnum);
+    static constexpr char const* split_point = std::ranges::find_if_not(Expression, is_iden);
     if constexpr (split_point == Expression.begin())
         return std::tuple();
     else

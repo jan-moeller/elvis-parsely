@@ -44,6 +44,12 @@ consteval auto is_alnum(char const c) -> bool
     return is_alpha(c) || is_digit(c);
 }
 
+// Equivalent to `is_alpha(c) || c == '_'`
+consteval auto is_iden(char const c) -> bool
+{
+    return is_alnum(c) || c == '_';
+}
+
 // Trims excess characters at the front and back of an inplace_string and returns the result
 template<structural::inplace_string S, auto Predicate = is_space>
 consteval auto trim()
