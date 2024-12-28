@@ -15,4 +15,5 @@ TEST_CASE("trim")
     STATIC_CHECK(trim<"asd">() == "asd");
     STATIC_CHECK(trim<"  asd   ">() == "asd");
     STATIC_CHECK(trim<"0123asd456", is_digit>() == "asd");
+    STATIC_CHECK(trim<"0123456", is_digit>() == "");
 }

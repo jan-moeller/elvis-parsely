@@ -61,6 +61,8 @@ consteval auto trim()
         }();
         static constexpr auto end = []
         {
+            if (begin == S.end())
+                return begin;
             char const* it = S.end() - 1;
             while (it != begin && Predicate(*it))
                 --it;
