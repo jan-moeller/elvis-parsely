@@ -12,6 +12,7 @@ add_executable(elvis_parsely_tests
         test.cpp
         utility/test_grammar_ast.cpp
         utility/test_indirect.cpp
+        utility/test_parser.cpp
         utility/test_string.cpp
 )
 
