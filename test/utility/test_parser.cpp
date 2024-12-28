@@ -179,4 +179,32 @@ TEST_CASE("parser")
             CHECK(result->get<1>()->get<0>()->get<2>().source_text == ")");
         }
     }
+
+    SECTION("simple calculator")
+    {
+        constexpr structural::inplace_string grammar = R"raw(
+            expr: binary_expr | unary_expr;
+            binary_expr: unary_expr binop expr;
+            unary_expr: unop prim_expr | prim_expr;
+            prim_expr: "(" expr ")" | number;
+            number: digit number | digit;
+
+            digit: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+            unop: "+" | "-";
+            binop: "+" | "-" | "*" | "/";
+        )raw";
+
+        constexpr parser<trim<grammar>()> parse;
+
+        CHECK(parse("0"));
+        CHECK(parse("1234567890"));
+        CHECK(parse("-0"));
+        CHECK(parse("+0"));
+        CHECK(parse("1+2"));
+        CHECK(parse("1*2"));
+        CHECK(parse("1-2"));
+        CHECK(parse("1/2"));
+        CHECK(parse("(1+2)*3"));
+        CHECK(parse("-(1+2)*3"));
+    }
 }
