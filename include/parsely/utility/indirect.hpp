@@ -67,7 +67,7 @@ class indirect
         return *this;
     }
 
-    constexpr auto operator=(nullptr_t) -> indirect&
+    constexpr auto operator=(std::nullptr_t) -> indirect&
     {
         m_ptr = nullptr;
         return *this;
