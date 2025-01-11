@@ -14,13 +14,13 @@ namespace parsely::detail
 template<typename Parser, auto Expr>
 struct parser_creator;
 
-template<typename Parser, detail::nonterminal_expr Expr>
+template<typename Parser, nonterminal_expr Expr>
 constexpr auto parse_nonterminal(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     return Parser::template parse<Expr.symbol>(input);
 }
 
-template<typename Parser, detail::terminal_expr Expr>
+template<typename Parser, terminal_expr Expr>
 constexpr auto parse_terminal(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     if (input.starts_with(Expr.terminal))
@@ -33,7 +33,7 @@ constexpr auto parse_terminal(std::string_view input) -> parse_tree_node<Parser,
     return parse_tree_node<Parser, Expr>{};
 }
 
-template<typename Parser, detail::seq_expr Expr>
+template<typename Parser, seq_expr Expr>
 constexpr auto parse_seq(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     static constexpr auto sub_parsers = []<std::size_t... is>(std::index_sequence<is...>) constexpr
@@ -63,7 +63,7 @@ constexpr auto parse_seq(std::string_view input) -> parse_tree_node<Parser, Expr
     }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.sequence)>>{});
 }
 
-template<typename Parser, detail::alt_expr Expr>
+template<typename Parser, alt_expr Expr>
 constexpr auto parse_alt(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     static constexpr auto sub_parsers = []<std::size_t... is>(std::index_sequence<is...>) constexpr
@@ -93,7 +93,7 @@ constexpr auto parse_alt(std::string_view input) -> parse_tree_node<Parser, Expr
     }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.alternatives)>>{});
 }
 
-template<typename Parser, detail::rep_expr Expr>
+template<typename Parser, rep_expr Expr>
 constexpr auto parse_rep(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     static constexpr auto sub_parser = parser_creator<Parser, Expr.element>()();
@@ -117,7 +117,7 @@ constexpr auto parse_rep(std::string_view input) -> parse_tree_node<Parser, Expr
     };
 }
 
-template<typename Parser, detail::inbuilt_expr Expr>
+template<typename Parser, inbuilt_expr Expr>
 constexpr auto parse_inbuilt(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
     if constexpr (std::is_invocable_r_v<bool, decltype(Expr.parse), char>)
