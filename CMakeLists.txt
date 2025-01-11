@@ -15,6 +15,7 @@ add_library(elvis_parsely INTERFACE
         include/parsely/utility/grammar_ast.hpp
         include/parsely/utility/indirect.hpp
         include/parsely/utility/parse_tree_node.hpp
+        include/parsely/utility/parser_creator.hpp
         include/parsely/utility/parser.hpp
         include/parsely/utility/string.hpp
 )

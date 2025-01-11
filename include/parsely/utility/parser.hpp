@@ -9,6 +9,7 @@
 #include <parsely/utility/grammar_ast.hpp>
 #include <parsely/utility/indirect.hpp>
 #include <parsely/utility/parse_tree_node.hpp>
+#include <parsely/utility/parser_creator.hpp>
 #include <parsely/utility/string.hpp>
 
 #include <structural/inplace_string.hpp>
@@ -17,109 +18,6 @@ namespace parsely
 {
 namespace detail
 {
-template<typename Parser, auto Expr>
-struct parser_creator;
-
-template<typename Parser, detail::nonterminal_expr Expr>
-struct parser_creator<Parser, Expr>
-{
-    static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
-    {
-        return [](std::string_view input) -> parse_tree_node<Parser, Expr>
-        {
-            return Parser::template parse<Expr.symbol>(input);
-        };
-    }
-};
-template<typename Parser, detail::terminal_expr Expr>
-struct parser_creator<Parser, Expr>
-{
-    static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
-    {
-        return [](std::string_view input) -> parse_tree_node<Parser, Expr>
-        {
-            if (input.starts_with(Expr.terminal))
-            {
-                return parse_tree_node<Parser, Expr>{
-                    .valid       = true,
-                    .source_text = input.substr(0, Expr.terminal.size()),
-                };
-            }
-            return parse_tree_node<Parser, Expr>{};
-        };
-    }
-};
-template<typename Parser, detail::seq_expr Expr>
-struct parser_creator<Parser, Expr>
-{
-    static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
-    {
-        static constexpr auto sub_parsers = []<std::size_t... is>(std::index_sequence<is...>) constexpr
-        {
-            return structural::tuple{parser_creator<Parser, structural::get<is>(Expr.sequence)>()()...};
-        }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.sequence)>>{});
-
-        static constexpr auto parse_one = []<std::size_t I>(std::string_view& input, bool& valid, std::size_t& consumed)
-        {
-            if (!valid) // Short-circuit
-                return parse_tree_node<Parser, get<I>(Expr.sequence)>{};
-
-            auto r = structural::get<I>(sub_parsers)(input);
-            input.remove_prefix(r.source_text.size());
-            valid &= r.valid;
-            consumed += r.source_text.size();
-            return r;
-        };
-        return [](std::string_view input) -> parse_tree_node<Parser, Expr>
-        {
-            return [remaining_input = input, &input]<std::size_t... is>(std::index_sequence<is...>) constexpr mutable
-            {
-                bool        valid    = true;
-                std::size_t consumed = 0;
-                std::tuple  results { parse_one.template operator()<is>(remaining_input, valid, consumed)... };
-                return parse_tree_node<Parser, Expr>{.valid         = valid,
-                                                     .source_text   = input.substr(0, consumed),
-                                                     .node_sequence = std::move(results)};
-            }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.sequence)>>{});
-        };
-    }
-};
-template<typename Parser, detail::alt_expr Expr>
-struct parser_creator<Parser, Expr>
-{
-    static consteval auto operator()() -> parse_tree_node<Parser, Expr> (*)(std::string_view)
-    {
-        static constexpr auto sub_parsers = []<std::size_t... is>(std::index_sequence<is...>) constexpr
-        {
-            return structural::tuple{parser_creator<Parser, structural::get<is>(Expr.alternatives)>()()...};
-        }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.alternatives)>>{});
-
-        constexpr auto create_rettype = []<std::size_t... is>(std::index_sequence<is...>) constexpr
-        {
-            using T = std::variant<std::invoke_result_t<decltype(get<is>(sub_parsers)), std::string_view>...>;
-            return T();
-        };
-        using return_type = decltype(create_rettype(
-            std::make_index_sequence<std::tuple_size_v<decltype(Expr.alternatives)>>{}));
-
-        return [](std::string_view input) -> parse_tree_node<Parser, Expr>
-        {
-            return [remaining_input = input, &input]<std::size_t... is>(std::index_sequence<is...>) mutable
-            {
-                return_type result;
-                ((result = get<is>(sub_parsers)(input), std::visit([](auto const& r) { return r.valid; }, result))
-                 || ...);
-
-                bool             valid       = std::visit([](auto const& r) { return r.valid; }, result);
-                std::string_view source_text = std::visit([](auto const& r) { return r.source_text; }, result);
-
-                return parse_tree_node<Parser, Expr>{.valid             = valid,
-                                                     .source_text       = source_text,
-                                                     .node_alternatives = std::move(result)};
-            }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.alternatives)>>{});
-        };
-    }
-};
 } // namespace detail
 
 // A parser for the given grammar
