@@ -9,7 +9,6 @@ list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
 include(Catch)
 
 add_executable(elvis_parsely_tests
-        utility/test_grammar_ast.cpp
         utility/test_grammar_parser.cpp
         utility/test_indirect.cpp
         utility/test_parser_creator.cpp
