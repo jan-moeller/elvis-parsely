@@ -126,6 +126,13 @@ constexpr auto parse_inbuilt(std::string_view input) -> parse_tree_node<Parser, 
             return parse_tree_node<Parser, Expr>{};
         return parse_tree_node<Parser, Expr>{.valid = true, .source_text = input.substr(0, 1)};
     }
+    else if constexpr (std::is_invocable_r_v<std::optional<std::size_t>, decltype(Expr.parse), std::string_view>)
+    {
+        auto const result = Expr.parse(input);
+        if (!result)
+            return parse_tree_node<Parser, Expr>{};
+        return parse_tree_node<Parser, Expr>{.valid = true, .source_text = input.substr(0, result.value())};
+    }
 }
 
 // Note: it's important that the parser_creators below don't return a lambda expression since gcc fails to

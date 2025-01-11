@@ -20,7 +20,7 @@ struct grammar_parser
 {
     static constexpr structural::inplace_string s_grammar_description = GrammarDescription;
 
-    // grammar     : _ (production _)+
+    // grammar     : _ (production _)+ eoi
     // production  : nonterminal _ ":" _ expression _ ";"
     // expression  : alt_expr
     // alt_expr    : seq_expr (_ "|" _ seq_expr)*
@@ -32,7 +32,7 @@ struct grammar_parser
     // __          : space+
     // _           : __?
     static constexpr auto s_grammar = make_grammar(
-        // grammar: _ (production _)+ ;
+        // grammar: _ (production _)+ $eoi;
         make_production("grammar",
                         make_seq_expr( //
                             make_nonterminal_expr("_"),
@@ -40,7 +40,8 @@ struct grammar_parser
                             make_rep_expr(                                //
                                 make_seq_expr(make_nonterminal_expr("_"), //
                                               make_nonterminal_expr("production"))),
-                            make_nonterminal_expr("_"))),
+                            make_nonterminal_expr("_"),
+                            inbuilt_eoi)),
         // production: nonterminal _ ":" _ expression _ ";" ;
         make_production("production",
                         make_seq_expr( //

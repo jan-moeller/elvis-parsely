@@ -20,11 +20,6 @@ namespace parsely
 namespace detail
 {
 template<structural::inplace_string Grammar>
-constexpr auto is_parse_result_valid(auto parse_tree) -> bool
-{
-    return parse_tree.valid && parse_tree.source_text == Grammar;
-}
-template<structural::inplace_string Grammar>
 constexpr auto create_failure_string(auto /*parse_tree*/) -> std::string
 {
     // TODO: Implement dynamic error string creation
@@ -39,7 +34,7 @@ struct parser
   private:
     static constexpr auto s_grammar = []
     {
-        static_assert(detail::is_parse_result_valid<Grammar>(detail::grammar_parser<Grammar>::parse()),
+        static_assert(detail::grammar_parser<Grammar>::parse().valid,
                       detail::create_failure_string<Grammar>(detail::grammar_parser<Grammar>::parse()));
         return STRUCTURALIZE(detail::grammar_parser<Grammar>::parse());
     }();

@@ -141,6 +141,13 @@ inline constexpr auto inbuilt_digit    = make_inbuilt_expr("digit", is_digit);
 inline constexpr auto inbuilt_alpha    = make_inbuilt_expr("alpha", is_alpha);
 inline constexpr auto inbuilt_alnum    = make_inbuilt_expr("alnum", is_alnum);
 inline constexpr auto inbuilt_nonquote = make_inbuilt_expr("nonquote", [](char const c) { return c != '"'; });
+inline constexpr auto inbuilt_eoi      = make_inbuilt_expr("eoi",
+                                                      [](std::string_view const input) -> std::optional<std::size_t>
+                                                      {
+                                                          if (input.empty())
+                                                              return 0;
+                                                          return std::nullopt;
+                                                      });
 } // namespace parsely::detail
 
 #endif // INCLUDE_PARSELY_UTILITY_GRAMMAR_AST_HPP
