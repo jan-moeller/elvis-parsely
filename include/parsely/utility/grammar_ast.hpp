@@ -37,6 +37,12 @@ struct grammar
     constexpr auto operator==(grammar const&) const -> bool = default;
 };
 
+template<typename... Productions>
+consteval auto make_grammar(Productions... productions)
+{
+    return grammar{structural::tuple{productions...}};
+}
+
 // A production AST node
 template<std::size_t N, typename Expression>
 struct production
@@ -47,6 +53,12 @@ struct production
     constexpr auto operator==(production const&) const -> bool = default;
 };
 
+template<std::size_t N, typename Expression>
+consteval auto make_production(char const (&symbol)[N], Expression expression)
+{
+    return production{structural::inplace_string<N>{symbol}, expression};
+}
+
 // An alternatives expression AST node
 template<typename... Alternatives>
 struct alt_expr
@@ -55,6 +67,12 @@ struct alt_expr
 
     constexpr auto operator==(alt_expr const&) const -> bool = default;
 };
+
+template<typename... Alternatives>
+consteval auto make_alt_expr(Alternatives... alternatives)
+{
+    return alt_expr{structural::tuple{alternatives...}};
+}
 
 // A sequence expression AST node
 template<typename... Elements>
@@ -65,6 +83,12 @@ struct seq_expr
     constexpr auto operator==(seq_expr const&) const -> bool = default;
 };
 
+template<typename... Sequence>
+consteval auto make_seq_expr(Sequence... sequence)
+{
+    return seq_expr{structural::tuple{sequence...}};
+}
+
 // A terminal expression AST node
 template<std::size_t N>
 struct terminal_expr
@@ -74,6 +98,12 @@ struct terminal_expr
     constexpr auto operator==(terminal_expr const&) const -> bool = default;
 };
 
+template<std::size_t N>
+consteval auto make_terminal_expr(char const (&terminal)[N])
+{
+    return terminal_expr{structural::inplace_string<N>{terminal}};
+}
+
 // A nonterminal expression AST node
 template<std::size_t N>
 struct nonterminal_expr
@@ -82,6 +112,12 @@ struct nonterminal_expr
 
     constexpr auto operator==(nonterminal_expr const&) const -> bool = default;
 };
+
+template<std::size_t N>
+consteval auto make_nonterminal_expr(char const (&symbol)[N])
+{
+    return nonterminal_expr{structural::inplace_string<N>{symbol}};
+}
 
 // Helper function to elevate an expression to alt_expr
 template<typename... Exprs>
