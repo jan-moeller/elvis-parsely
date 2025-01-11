@@ -60,4 +60,14 @@ TEST_CASE("parser_creator")
             STATIC_CHECK(parse("abc"));
         }
     }
+
+    SECTION("rep_expr")
+    {
+        constexpr parser_creator<int, make_rep_expr(make_terminal_expr("a"))> creator;
+        constexpr auto                                                        parse = creator();
+
+        STATIC_CHECK(parse("").empty());
+        STATIC_CHECK(parse("aaa").size() == 3);
+        STATIC_CHECK(parse("aaabb").size() == 3);
+    }
 }

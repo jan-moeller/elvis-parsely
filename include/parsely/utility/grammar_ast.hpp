@@ -89,6 +89,21 @@ consteval auto make_seq_expr(Sequence... sequence)
     return seq_expr{structural::tuple{sequence...}};
 }
 
+// A repetition expression AST node
+template<typename Element>
+struct rep_expr
+{
+    Element element;
+
+    constexpr auto operator==(rep_expr const&) const -> bool = default;
+};
+
+template<typename Element>
+consteval auto make_rep_expr(Element element)
+{
+    return rep_expr{element};
+}
+
 // A terminal expression AST node
 template<std::size_t N>
 struct terminal_expr

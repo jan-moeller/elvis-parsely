@@ -98,6 +98,30 @@ struct parse_tree_node<Parser, Expr>
     }
 };
 
+// Parse tree node used for repetition expressions
+template<typename Parser, detail::rep_expr Expr>
+struct parse_tree_node<Parser, Expr>
+{
+    using parser_type = Parser;
+    using nested_type = std::vector<parse_tree_node<Parser, Expr.element>>;
+
+    bool             valid = false;    // True if parsing successful
+    std::string_view source_text;      // Consumed source text
+    nested_type      node_repetitions; // vector of more parse_tree_nodes
+
+    constexpr auto operator==(parse_tree_node const&) const -> bool = default;
+
+    constexpr explicit operator bool() const { return valid; };
+
+    constexpr auto size() const noexcept -> std::size_t { return node_repetitions.size(); }
+    constexpr auto empty() const noexcept -> bool { return node_repetitions.empty(); }
+
+    constexpr auto operator[](std::size_t i) const noexcept -> parse_tree_node<Parser, Expr.element> const&
+    {
+        return node_repetitions[i];
+    }
+};
+
 // Parse tree node used for terminal expressions
 template<typename Parser, detail::terminal_expr Expr>
 struct parse_tree_node<Parser, Expr>
@@ -171,6 +195,7 @@ struct parse_tree_node<Parser, Expr>
 
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(seq)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(alt)
+ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(rep)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(nonterminal)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(terminal)
 

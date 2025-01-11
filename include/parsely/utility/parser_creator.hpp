@@ -93,6 +93,30 @@ constexpr auto parse_alt(std::string_view input) -> parse_tree_node<Parser, Expr
     }(std::make_index_sequence<std::tuple_size_v<decltype(Expr.alternatives)>>{});
 }
 
+template<typename Parser, detail::rep_expr Expr>
+constexpr auto parse_rep(std::string_view input) -> parse_tree_node<Parser, Expr>
+{
+    static constexpr auto sub_parser = parser_creator<Parser, Expr.element>()();
+
+    auto const  orig_input = input;
+    std::size_t consumed   = 0;
+
+    std::vector<parse_tree_node<Parser, Expr.element>> parsed;
+
+    for (auto r = sub_parser(input); r; r = sub_parser(input))
+    {
+        parsed.push_back(r);
+        consumed += r.source_text.size();
+        input.remove_prefix(r.source_text.size());
+    }
+
+    return parse_tree_node<Parser, Expr>{
+        .valid            = true,
+        .source_text      = orig_input.substr(0, consumed),
+        .node_repetitions = std::move(parsed),
+    };
+}
+
 // Note: it's important that the parser_creators below don't return a lambda expression since gcc fails to
 // constant-evaluate it ("dereferencing null pointer"), possibly due to
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=115878.
@@ -111,6 +135,7 @@ ELVIS_PARSELY_MAKE_PARSER_CREATOR(nonterminal)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(terminal)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(seq)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(alt)
+ELVIS_PARSELY_MAKE_PARSER_CREATOR(rep)
 
 #undef ELVIS_PARSELY_MAKE_PARSER_CREATOR
 } // namespace parsely::detail
