@@ -176,6 +176,19 @@ struct parse_tree_node<Parser, Expr>
     constexpr auto operator->() -> decltype(auto) { return nested.operator->(); }
 };
 
+// Parse tree node used for inbuilt expressions
+template<typename Parser, detail::inbuilt_expr Expr>
+struct parse_tree_node<Parser, Expr>
+{
+    using parser_type = Parser;
+    bool             valid = false; // True if parsing successful
+    std::string_view source_text;   // Consumed source text
+
+    constexpr auto operator==(parse_tree_node const&) const -> bool = default;
+
+    constexpr explicit operator bool() const { return valid; };
+};
+
 #define ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(NODE)                                                               \
     template<typename Node>                                                                                            \
     struct is_##NODE##_parse_tree_node : std::false_type                                                               \
@@ -198,6 +211,7 @@ ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(alt)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(rep)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(nonterminal)
 ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(terminal)
+ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT(inbuilt)
 
 #undef ELVIS_PARSELY_MAKE_PARSE_TREE_NODE_CONCEPT
 

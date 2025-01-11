@@ -117,6 +117,17 @@ constexpr auto parse_rep(std::string_view input) -> parse_tree_node<Parser, Expr
     };
 }
 
+template<typename Parser, detail::inbuilt_expr Expr>
+constexpr auto parse_inbuilt(std::string_view input) -> parse_tree_node<Parser, Expr>
+{
+    if constexpr (std::is_invocable_r_v<bool, decltype(Expr.parse), char>)
+    {
+        if (input.empty() || !Expr.parse(input.front()))
+            return parse_tree_node<Parser, Expr>{};
+        return parse_tree_node<Parser, Expr>{.valid = true, .source_text = input.substr(0, 1)};
+    }
+}
+
 // Note: it's important that the parser_creators below don't return a lambda expression since gcc fails to
 // constant-evaluate it ("dereferencing null pointer"), possibly due to
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=115878.
@@ -136,6 +147,7 @@ ELVIS_PARSELY_MAKE_PARSER_CREATOR(terminal)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(seq)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(alt)
 ELVIS_PARSELY_MAKE_PARSER_CREATOR(rep)
+ELVIS_PARSELY_MAKE_PARSER_CREATOR(inbuilt)
 
 #undef ELVIS_PARSELY_MAKE_PARSER_CREATOR
 } // namespace parsely::detail

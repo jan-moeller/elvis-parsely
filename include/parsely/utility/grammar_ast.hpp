@@ -134,6 +134,29 @@ consteval auto make_nonterminal_expr(char const (&symbol)[N])
     return nonterminal_expr{structural::inplace_string<N>{symbol}};
 }
 
+// An inbuilt expression AST node
+template<std::size_t N, typename Fn>
+struct inbuilt_expr
+{
+    structural::inplace_string<N> name;
+    Fn                            parse;
+
+    constexpr auto operator==(inbuilt_expr const&) const -> bool = default;
+};
+
+template<std::size_t N, typename Fn>
+consteval auto make_inbuilt_expr(char const (&name)[N], Fn&& fn)
+{
+    return inbuilt_expr{structural::inplace_string<N>{name}, std::forward<Fn>(fn)};
+}
+
+inline constexpr auto inbuilt_blank    = make_inbuilt_expr("blank", is_blank);
+inline constexpr auto inbuilt_space    = make_inbuilt_expr("space", is_space);
+inline constexpr auto inbuilt_digit    = make_inbuilt_expr("digit", is_digit);
+inline constexpr auto inbuilt_alpha    = make_inbuilt_expr("alpha", is_alpha);
+inline constexpr auto inbuilt_alnum    = make_inbuilt_expr("alnum", is_alnum);
+inline constexpr auto inbuilt_nonquote = make_inbuilt_expr("nonquote", [](char const c) { return c != '"'; });
+
 // Helper function to elevate an expression to alt_expr
 template<typename... Exprs>
 consteval auto ensure_alt_expr(alt_expr<Exprs...> expr)

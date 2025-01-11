@@ -70,4 +70,14 @@ TEST_CASE("parser_creator")
         STATIC_CHECK(parse("aaa").size() == 3);
         STATIC_CHECK(parse("aaabb").size() == 3);
     }
+
+    SECTION("inbuilt_expr")
+    {
+        constexpr parser_creator<int, inbuilt_digit> creator;
+        constexpr auto                               parse = creator();
+
+        STATIC_CHECK(!parse(""));
+        STATIC_CHECK(!parse("aaa"));
+        STATIC_CHECK(parse("1"));
+    }
 }
