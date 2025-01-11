@@ -7,6 +7,7 @@
 #define GRAMMAR_PARSER_HPP
 
 #include <parsely/utility/grammar_ast.hpp>
+#include <parsely/utility/grammar_parser.hpp>
 #include <parsely/utility/indirect.hpp>
 #include <parsely/utility/parse_tree_node.hpp>
 #include <parsely/utility/parser_creator.hpp>
@@ -18,6 +19,17 @@ namespace parsely
 {
 namespace detail
 {
+template<structural::inplace_string Grammar>
+constexpr auto is_parse_result_valid(auto parse_tree) -> bool
+{
+    return parse_tree.valid && parse_tree.source_text == Grammar;
+}
+template<structural::inplace_string Grammar>
+constexpr auto create_failure_string(auto /*parse_tree*/) -> std::string
+{
+    // TODO: Implement dynamic error string creation
+    return "The grammar is invalid.";
+}
 } // namespace detail
 
 // A parser for the given grammar
@@ -27,10 +39,9 @@ struct parser
   private:
     static constexpr auto s_grammar = []
     {
-        static constexpr auto g = detail::parse_grammar<Grammar>();
-        static_assert(!detail::is_failed_parse(g), "Invalid grammar!");
-        static_assert(g.second.empty(), "Excess input at the end of grammar!");
-        return g.first;
+        static_assert(detail::is_parse_result_valid<Grammar>(detail::grammar_parser<Grammar>::parse()),
+                      detail::create_failure_string<Grammar>(detail::grammar_parser<Grammar>::parse()));
+        return STRUCTURALIZE(detail::grammar_parser<Grammar>::parse());
     }();
     static constexpr std::size_t s_num_productions = std::tuple_size_v<decltype(s_grammar.productions)>;
 

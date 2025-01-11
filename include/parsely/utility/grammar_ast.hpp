@@ -16,18 +16,6 @@
 
 namespace parsely::detail
 {
-// grammar     : production+
-// production  : nonterminal _ ":" _ expression _ ";"
-// expression  : alt_expr
-// alt_expr    : seq_expr (_ "|" _ seq_expr)*
-// seq_expr    : prim_expr (__ prim_expr)*
-// prim_expr   : paren_expr | terminal | nonterminal
-// paren_expr  : "(" _ expression _ ")"
-// terminal    : "\"" .* "\""
-// nonterminal : (alnum | "_")+
-// __          : space+
-// _           : __?
-
 // The grammar root AST node
 template<typename... Productions>
 struct grammar
@@ -448,6 +436,6 @@ consteval auto parse_grammar() // -> pair(grammar<...>, inplace_string)
         }
     }
 }
-} // namespace parsely
+} // namespace parsely::detail
 
 #endif // INCLUDE_PARSELY_UTILITY_GRAMMAR_AST_HPP

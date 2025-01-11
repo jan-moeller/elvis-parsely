@@ -10,6 +10,7 @@ include(Catch)
 
 add_executable(elvis_parsely_tests
         utility/test_grammar_ast.cpp
+        utility/test_grammar_parser.cpp
         utility/test_indirect.cpp
         utility/test_parser_creator.cpp
         utility/test_parser.cpp

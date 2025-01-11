@@ -13,6 +13,7 @@ CPMAddPackage("gh:jan-moeller/structural@0.5.0")
 add_library(elvis_parsely INTERFACE
         include/parsely/parsely.hpp
         include/parsely/utility/grammar_ast.hpp
+        include/parsely/utility/grammar_parser.hpp
         include/parsely/utility/indirect.hpp
         include/parsely/utility/parse_tree_node.hpp
         include/parsely/utility/parser_creator.hpp
