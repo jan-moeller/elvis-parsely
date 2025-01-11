@@ -149,7 +149,6 @@ struct parse_tree_node</* ... */>
 
 - Error out on left recursive grammars at compile time.
 - Better error reporting.
-- Support expression scoping with parentheses.
 - Support extended BNF constructs. 
 - Support non-char strings (unicode?)
 - Provide some common terminals as build-ins

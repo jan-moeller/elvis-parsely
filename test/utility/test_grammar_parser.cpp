@@ -48,6 +48,14 @@ TEST_CASE("grammar_parser")
         STATIC_CHECK(p.parse<"terminal">("\"asd\" foo|\"bar\""));
     }
 
+    SECTION("paren_expr")
+    {
+        STATIC_CHECK(!p.parse<"paren_expr">(""));
+        STATIC_CHECK(!p.parse<"paren_expr">("(\"\""));
+        STATIC_CHECK(p.parse<"paren_expr">("(asd qwe)"));
+        STATIC_CHECK(p.parse<"paren_expr">("(asd | qwe)"));
+    }
+
     SECTION("prim_expr")
     {
         STATIC_CHECK(!p.parse<"prim_expr">(""));

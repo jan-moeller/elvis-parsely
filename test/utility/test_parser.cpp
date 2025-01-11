@@ -183,15 +183,14 @@ TEST_CASE("parser")
     SECTION("simple calculator")
     {
         constexpr structural::inplace_string grammar = R"raw(
-            expr: binary_expr | unary_expr;
-            binary_expr: unary_expr binop expr;
-            unary_expr: unop prim_expr | prim_expr;
+            expr: product_expr;
+            product_expr: sum_expr ("*" | "/") product_expr | sum_expr;
+            sum_expr: unary_expr ("+" | "-") sum_expr | unary_expr;
+            unary_expr: ("+" | "-") prim_expr | prim_expr;
             prim_expr: "(" expr ")" | number;
             number: digit number | digit;
 
             digit: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
-            unop: "+" | "-";
-            binop: "+" | "-" | "*" | "/";
         )raw";
 
         constexpr parser<trim<grammar>()> parse;

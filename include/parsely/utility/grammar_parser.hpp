@@ -75,8 +75,15 @@ struct grammar_parser
         // prim_expr: terminal | nonterminal ;
         make_production("prim_expr",
                         make_alt_expr( //
+                            make_nonterminal_expr("paren_expr"),
                             make_nonterminal_expr("terminal"),
                             make_nonterminal_expr("nonterminal"))),
+        // paren_expr  : "(" _ expression _ ")" ;
+        make_production("paren_expr",
+                        make_seq_expr( //
+                            make_terminal_expr("("),
+                            make_nonterminal_expr("expression"),
+                            make_terminal_expr(")"))),
         // terminal: "\"" literal "\"" ;
         make_production("terminal",
                         make_seq_expr( //
@@ -231,57 +238,24 @@ struct serializer<grammar_parse_tree_node<GrammarDescription, Expr>>
     }
 };
 
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_grammar = grammar_parse_tree_node<GrammarDescription,
-                                                                parsely::detail::make_nonterminal_expr("grammar")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_production = grammar_parse_tree_node<GrammarDescription,
-                                                                   parsely::detail::make_nonterminal_expr(
-                                                                       "production")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_expression = grammar_parse_tree_node<GrammarDescription,
-                                                                   parsely::detail::make_nonterminal_expr(
-                                                                       "expression")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_alt_expr = grammar_parse_tree_node<GrammarDescription,
-                                                                 parsely::detail::make_nonterminal_expr("alt_expr")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_seq_expr = grammar_parse_tree_node<GrammarDescription,
-                                                                 parsely::detail::make_nonterminal_expr("seq_expr")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_prim_expr = grammar_parse_tree_node<GrammarDescription,
-                                                                  parsely::detail::make_nonterminal_expr("prim_expr")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_terminal = grammar_parse_tree_node<GrammarDescription,
-                                                                 parsely::detail::make_nonterminal_expr("terminal")>;
-template<inplace_string GrammarDescription>
-using grammar_parse_tree_node_nonterminal = grammar_parse_tree_node<GrammarDescription,
-                                                                    parsely::detail::make_nonterminal_expr(
-                                                                        "nonterminal")>;
+#define STRUCTURAL_MAKE_NODE(name)                                                                                     \
+    template<inplace_string GrammarDescription>                                                                        \
+    using grammar_parse_tree_node_##name = grammar_parse_tree_node<GrammarDescription,                                 \
+                                                                   parsely::detail::make_nonterminal_expr(#name)>;     \
+    template<inplace_string GrammarDescription, wrapper WrappedValue>                                                  \
+    struct structuralizer<grammar_parse_tree_node_##name<GrammarDescription>, WrappedValue>;
 
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_grammar<GrammarDescription>, WrappedValue>;
+STRUCTURAL_MAKE_NODE(grammar)
+STRUCTURAL_MAKE_NODE(production)
+STRUCTURAL_MAKE_NODE(expression)
+STRUCTURAL_MAKE_NODE(alt_expr)
+STRUCTURAL_MAKE_NODE(seq_expr)
+STRUCTURAL_MAKE_NODE(prim_expr)
+STRUCTURAL_MAKE_NODE(paren_expr)
+STRUCTURAL_MAKE_NODE(terminal)
+STRUCTURAL_MAKE_NODE(nonterminal)
 
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_production<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_expression<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_alt_expr<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_seq_expr<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_prim_expr<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_terminal<GrammarDescription>, WrappedValue>;
-
-template<inplace_string GrammarDescription, wrapper WrappedValue>
-struct structuralizer<grammar_parse_tree_node_nonterminal<GrammarDescription>, WrappedValue>;
+#undef STRUCTURAL_MAKE_NODE
 
 // ----
 
@@ -309,7 +283,6 @@ struct structuralizer<grammar_parse_tree_node_production<GrammarDescription>, Wr
     {
         static constexpr auto symbol     = WrappedValue.unwrap()->template get<0>().source_text;
         static constexpr auto expression = STRUCTURALIZE(WrappedValue.unwrap()->template get<4>());
-        // return parsely::detail::make_production(symbol, expression);
         return parsely::detail::production{structural::inplace_string<symbol.size()>{symbol}, expression};
     }
 };
@@ -368,18 +341,18 @@ struct structuralizer<grammar_parse_tree_node_prim_expr<GrammarDescription>, Wra
     static consteval auto do_structuralize()
     {
         if constexpr (WrappedValue.unwrap()->index() == 0)
-        {
-            static constexpr auto terminal = WrappedValue.unwrap()->template get<0>()->template get<1>().source_text;
-            // return parsely::detail::make_terminal_expr(terminal);
-            return parsely::detail::terminal_expr{structural::inplace_string<terminal.size()>{terminal}};
-        }
+            return STRUCTURALIZE(WrappedValue.unwrap()->template get<0>());
+        else if constexpr (WrappedValue.unwrap()->index() == 1)
+            return STRUCTURALIZE(WrappedValue.unwrap()->template get<1>());
         else
-        {
-            static constexpr auto symbol = WrappedValue.unwrap()->template get<1>().source_text;
-            // return parsely::detail::make_nonterminal_expr(symbol);
-            return parsely::detail::nonterminal_expr{structural::inplace_string<symbol.size()>{symbol}};
-        }
+            return STRUCTURALIZE(WrappedValue.unwrap()->template get<2>());
     }
+};
+
+template<inplace_string GrammarDescription, wrapper WrappedValue>
+struct structuralizer<grammar_parse_tree_node_paren_expr<GrammarDescription>, WrappedValue>
+{
+    static consteval auto do_structuralize() { return STRUCTURALIZE(WrappedValue.unwrap()->template get<1>()); }
 };
 
 template<inplace_string GrammarDescription, wrapper WrappedValue>
@@ -387,8 +360,7 @@ struct structuralizer<grammar_parse_tree_node_terminal<GrammarDescription>, Wrap
 {
     static consteval auto do_structuralize()
     {
-        static constexpr auto terminal = WrappedValue.unwrap().template get<1>().source_text;
-        // return parsely::detail::make_terminal_expr(terminal);
+        static constexpr auto terminal = WrappedValue.unwrap()->template get<1>().source_text;
         return parsely::detail::terminal_expr{structural::inplace_string<terminal.size()>{terminal}};
     }
 };
@@ -399,7 +371,6 @@ struct structuralizer<grammar_parse_tree_node_nonterminal<GrammarDescription>, W
     static consteval auto do_structuralize()
     {
         static constexpr auto symbol = WrappedValue.unwrap().source_text;
-        // return parsely::detail::make_nonterminal_expr(symbol);
         return parsely::detail::nonterminal_expr{structural::inplace_string<symbol.size()>{symbol}};
     }
 };
