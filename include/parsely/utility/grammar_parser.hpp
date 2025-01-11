@@ -121,7 +121,7 @@ struct grammar_parser
         static constexpr std::size_t index = []<std::size_t... is>(std::index_sequence<is...>) constexpr
         {
             std::size_t i = 0;
-            ((i = is, structural::get<is>(s_grammar.productions).symbol == Symbol) || ...);
+            ((i = is, structural::get<is>(s_grammar.productions).symbol == Symbol) || ...) || (i = s_num_productions);
             return i;
         }(std::make_index_sequence<s_num_productions>{});
         static_assert(index < s_num_productions, "Unknown symbol!");
