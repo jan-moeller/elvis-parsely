@@ -20,6 +20,8 @@ struct grammar
     structural::tuple<Productions...> productions;
 
     constexpr auto operator==(grammar const&) const -> bool = default;
+
+    constexpr auto production_count() const -> std::size_t { return sizeof...(Productions); }
 };
 
 template<typename... Productions>

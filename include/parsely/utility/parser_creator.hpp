@@ -17,7 +17,27 @@ struct parser_creator;
 template<typename Parser, nonterminal_expr Expr>
 constexpr auto parse_nonterminal(std::string_view input) -> parse_tree_node<Parser, Expr>
 {
-    return Parser::template parse<Expr.symbol>(input);
+    static constexpr auto        symbol           = Expr.symbol;
+    static constexpr auto        grammar          = Parser::s_grammar;
+    static constexpr auto        production_count = grammar.production_count();
+    static constexpr std::size_t index            = []<std::size_t... is>(std::index_sequence<is...>) constexpr
+    {
+        std::size_t i = 0;
+        ((i = is, structural::get<is>(grammar.productions).symbol == symbol) || ...) || (i = production_count);
+        return i;
+    }(std::make_index_sequence<production_count>{});
+    static_assert(index < production_count, "Unknown symbol!");
+
+    static constexpr auto expression = structural::get<index>(grammar.productions).expression;
+
+    static constexpr auto nt_parser = detail::parser_creator<Parser, expression>()();
+
+    auto result = nt_parser(input);
+    return parse_tree_node<Parser, nonterminal_expr{symbol}>{
+        .valid       = result.valid,
+        .source_text = result.source_text,
+        .nested      = indirect(std::move(result)),
+    };
 }
 
 template<typename Parser, terminal_expr Expr>

@@ -125,24 +125,7 @@ struct grammar_parser
     static constexpr auto parse(std::string_view const input = s_grammar_description)
         -> parse_tree_node<grammar_parser, nonterminal_expr{Symbol}>
     {
-        static constexpr std::size_t index = []<std::size_t... is>(std::index_sequence<is...>) constexpr
-        {
-            std::size_t i = 0;
-            ((i = is, structural::get<is>(s_grammar.productions).symbol == Symbol) || ...) || (i = s_num_productions);
-            return i;
-        }(std::make_index_sequence<s_num_productions>{});
-        static_assert(index < s_num_productions, "Unknown symbol!");
-
-        static constexpr auto expression = structural::get<index>(s_grammar.productions).expression;
-
-        static constexpr auto nt_parser = detail::parser_creator<grammar_parser, expression>()();
-
-        auto result = nt_parser(input);
-        return parse_tree_node<grammar_parser, nonterminal_expr{Symbol}>{
-            .valid       = result.valid,
-            .source_text = result.source_text,
-            .nested      = indirect(std::move(result)),
-        };
+        return detail::parse_nonterminal<grammar_parser, nonterminal_expr{Symbol}>(input);
     }
 };
 } // namespace parsely::detail

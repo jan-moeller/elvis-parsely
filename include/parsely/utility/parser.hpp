@@ -11,7 +11,6 @@
 #include <parsely/utility/indirect.hpp>
 #include <parsely/utility/parse_tree_node.hpp>
 #include <parsely/utility/parser_creator.hpp>
-#include <parsely/utility/string.hpp>
 
 #include <structural/inplace_string.hpp>
 
@@ -25,6 +24,13 @@ constexpr auto create_failure_string(auto /*parse_tree*/) -> std::string
     // TODO: Implement dynamic error string creation
     return "The grammar is invalid.";
 }
+template<structural::inplace_string Grammar>
+consteval auto parse_grammar()
+{
+    static_assert(grammar_parser<Grammar>::parse().valid,
+                  create_failure_string<Grammar>(grammar_parser<Grammar>::parse()));
+    return STRUCTURALIZE(grammar_parser<Grammar>::parse());
+}
 } // namespace detail
 
 // A parser for the given grammar
@@ -32,16 +38,14 @@ template<structural::inplace_string Grammar>
 struct parser
 {
   private:
-    static constexpr auto s_grammar = []
-    {
-        static_assert(detail::grammar_parser<Grammar>::parse().valid,
-                      detail::create_failure_string<Grammar>(detail::grammar_parser<Grammar>::parse()));
-        return STRUCTURALIZE(detail::grammar_parser<Grammar>::parse());
-    }();
+    static constexpr auto        s_grammar         = detail::parse_grammar<Grammar>();
     static constexpr std::size_t s_num_productions = std::tuple_size_v<decltype(s_grammar.productions)>;
 
     template<typename, auto>
     friend struct parse_tree_node;
+
+    template<typename Parser, detail::nonterminal_expr Expr>
+    friend constexpr auto detail::parse_nonterminal(std::string_view input) -> parse_tree_node<Parser, Expr>;
 
   public:
     // Parses the given input string and returns a parse tree
@@ -52,24 +56,7 @@ struct parser
     static constexpr auto parse(std::string_view const input)
         -> parse_tree_node<parser, detail::nonterminal_expr{Symbol}>
     {
-        static constexpr std::size_t index = []<std::size_t... is>(std::index_sequence<is...>) constexpr
-        {
-            std::size_t i = 0;
-            ((i = is, structural::get<is>(s_grammar.productions).symbol == Symbol) || ...) || (i = s_num_productions);
-            return i;
-        }(std::make_index_sequence<s_num_productions>{});
-        static_assert(index < s_num_productions, "Unknown symbol!");
-
-        static constexpr auto expression = structural::get<index>(s_grammar.productions).expression;
-
-        static constexpr auto nt_parser = detail::parser_creator<parser, expression>()();
-
-        auto result = nt_parser(input);
-        return parse_tree_node<parser, detail::nonterminal_expr{Symbol}>{
-            .valid       = result.valid,
-            .source_text = result.source_text,
-            .nested      = indirect(std::move(result)),
-        };
+        return detail::parse_nonterminal<parser, detail::nonterminal_expr{Symbol}>(input);
     }
 
     // Parses the given input string
