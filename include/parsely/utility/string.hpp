@@ -6,8 +6,7 @@
 #ifndef STRING_HPP
 #define STRING_HPP
 
-#include <structural/inplace_string.hpp>
-
+#include <algorithm>
 #include <array>
 
 namespace parsely
@@ -42,41 +41,6 @@ constexpr auto is_alpha(char const c) -> bool
 constexpr auto is_alnum(char const c) -> bool
 {
     return is_alpha(c) || is_digit(c);
-}
-
-// Equivalent to `is_alpha(c) || c == '_'`
-consteval auto is_iden(char const c) -> bool
-{
-    return is_alnum(c) || c == '_';
-}
-
-// Trims excess characters at the front and back of an inplace_string and returns the result
-template<structural::inplace_string S, auto Predicate = is_space>
-consteval auto trim()
-{
-    if constexpr (S.empty())
-        return S;
-    else
-    {
-        static constexpr auto begin = []
-        {
-            char const* it = S.begin();
-            while (it != S.end() && Predicate(*it))
-                ++it;
-            return it;
-        }();
-        static constexpr auto end = []
-        {
-            if (begin == S.end())
-                return begin;
-            char const* it = S.end() - 1;
-            while (it != begin && Predicate(*it))
-                --it;
-            return it + 1;
-        }();
-        static constexpr auto size = std::distance(begin, end);
-        return structural::inplace_string<size>{begin, end};
-    }
 }
 } // namespace parsely
 

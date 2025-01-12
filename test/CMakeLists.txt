@@ -13,7 +13,6 @@ add_executable(elvis_parsely_tests
         utility/test_indirect.cpp
         utility/test_parser_creator.cpp
         utility/test_parser.cpp
-        utility/test_string.cpp
 )
 
 target_link_libraries(elvis_parsely_tests Catch2::Catch2WithMain elvis_parsely)

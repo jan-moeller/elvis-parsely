@@ -193,7 +193,7 @@ TEST_CASE("parser")
             digit: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
         )raw";
 
-        constexpr parser<trim<grammar>()> parse;
+        constexpr parser<grammar> parse;
 
         CHECK(parse("0"));
         CHECK(parse("1234567890"));

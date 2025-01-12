@@ -24,7 +24,7 @@ constexpr structural::inplace_string grammar = R"raw(
     binop: "+" | "-" | "*" | "/";
 )raw";
 
-constexpr parser<trim<grammar>()> parse;
+constexpr parser<grammar> parse;
 
 auto const parse_tree = parse("-(1+2)*3");
 ```
